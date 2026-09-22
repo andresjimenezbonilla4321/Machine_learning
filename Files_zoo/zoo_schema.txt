@@ -1,0 +1,56 @@
+Practice 1 -- Zoo input schema (student-facing)
+================================================
+
+This file describes the FIELDS of `zoo_features.csv` so that you can understand the
+input. It is deliberately NOT the original UCI `zoo.names`.
+
+The original file also describes the target in detail. Practice 1's unsupervised
+seal withholds everything about the target until you have frozen both clustering
+decisions, so the original is kept out of the student material and is used only to
+verify provenance and schema.
+
+After the reveal stage, `zoo_labels.csv` gives you the class of every row, and you
+may report anything you like about it.
+
+
+FILE: zoo_features.csv
+----------------------
+101 rows, one per animal, in the order of the original source. Comma-separated,
+with a header row. No missing values.
+
+  row_id        integer   course-owned key, 1..101, in source order.
+                          Use THIS to align rows. It is unique.
+
+  animal_name   text      a display/name field, NOT a key. It is not guaranteed
+                          unique: the official source repeats at least one name.
+                          Do not join on it.
+
+  16 predictive attributes, in this order:
+     1. hair
+     2. feathers
+     3. eggs
+     4. milk
+     5. airborne
+     6. aquatic
+     7. predator
+     8. toothed
+     9. backbone
+    10. breathes
+    11. venomous
+    12. fins
+    13. legs
+    14. tail
+    15. domestic
+    16. catsize
+
+  All sixteen are 0/1 Boolean except `legs`, which is a small non-negative integer
+  count. That single difference is why the practical asks you to declare a scaling
+  decision and argue for it.
+
+
+FILE: zoo_labels.csv
+--------------------
+Exactly two columns: `row_id` and `type`. Join on `row_id`.
+
+DO NOT OPEN THIS FILE BEFORE BOTH FROZEN DECISIONS. The seal is graded, and the
+notebook guard checks the order of your cells.
