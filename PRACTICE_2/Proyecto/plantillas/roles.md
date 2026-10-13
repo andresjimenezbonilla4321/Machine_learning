@@ -1,8 +1,8 @@
-# `roles.md` — the five-phase rotation
+# roles.md — the five-phase rotation
 
-**Team:** _(team identifier)_ · **Members:** S1 … S5 _(replace with names)_
+**Team:** Software Project Team · **Members:** S1 = Andres, S2 = Gonzalo, S3 = Fernando, S4 = Manuel, S5 = Diego
 
-Submit this file with **every** milestone, with the current phase's row marked.
+Submit this file with every milestone, with the current phase's row marked.
 
 ## The five roles
 
@@ -18,45 +18,26 @@ Submit this file with **every** milestone, with the current phase's row marked.
 
 | Student | P2 | P3 | P4 | P5 | Final Integration & Defence |
 |---|---|---|---|---|---|
-| S1 = ______ | R1 | R2 | R3 | R4 | **R5** |
-| S2 = ______ | R2 | R3 | R4 | R5 | **R1** |
-| S3 = ______ | R3 | R4 | R5 | R1 | **R2** |
-| S4 = ______ | R4 | R5 | R1 | R2 | **R3** |
-| S5 = ______ | R5 | R1 | R2 | R3 | **R4** |
-
-Four properties of this table are what make it a rotation rather than a rota:
-
-1. in each of the five phases the five roles are held by five **different** students;
-2. **no student repeats a role** across the five phases;
-3. each student therefore serves **exactly once** as primary owner of each of the five
-   responsibility domains;
-4. the role a student did **not** hold during P2–P5 is precisely the role they lead during
-   **Final Integration & Defence** — so the fifth rotation is determined by the first four
-   rather than chosen.
-
-Property 4 is the design's answer to "five people, four modelling milestones": the domain you
-never executed during modelling is the one you own when the project is integrated and
-defended. Every member therefore has to understand a part of the pipeline they did not
-personally build.
+| S1 = Andres | R1 | R2 | R3 | R4 | **R5** |
+| S2 = Gonzalo | R2 | R3 | R4 | R5 | **R1** |
+| S3 = Fernando | R3 | R4 | R5 | R1 | **R2** |
+| S4 = Manuel | R4 | R5 | R1 | R2 | **R3** |
+| S5 = Diego | R5 | R1 | R2 | R3 | **R4** |
 
 ## What primary ownership does not mean
 
-**It does not restrict questioning.** At the defence any student may be asked about **any**
-part of either predictive system, independently of every role they have held. Each student is
-guaranteed at least one question inside the domain they led during Final Integration &
-Defence, and at least one outside it.
+**It does not restrict questioning.** At the defence any student may be asked about **any** part of either predictive system, independently of every role they have held. Each student is guaranteed at least one question inside the domain they led during Final Integration & Defence, and at least one outside it.
 
-A team of four or six is remapped by the professor; the instrument is the table, not the
-arithmetic.
+A team of four or six is remapped by the professor; the instrument is the table, not the arithmetic.
 
 ## This milestone
 
 | Field | Value |
 |---|---|
-| Milestone | _(P2 / P3 / P4 / P5 / Final Integration & Defence)_ |
-| R1 | |
-| R2 | |
-| R3 | |
-| R4 | |
-| R5 | |
-| Anything the team reallocated, and why | |
+| Milestone | **P2** |
+| R1 | Andres |
+| R2 | Gonzalo |
+| R3 | Fernando |
+| R4 | Manuel |
+| R5 | Diego |
+| Anything the team reallocated, and why | No reallocations. The original role rotation is maintained as proposed. |
