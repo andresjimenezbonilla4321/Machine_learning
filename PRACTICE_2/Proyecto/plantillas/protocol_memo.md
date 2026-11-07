@@ -31,9 +31,9 @@ The course-fixed estimator and preprocessing were held constant within each chal
 | Challenge | Grouped | Ungrouped / row-wise | Observed difference |
 |---|---:|---:|---:|
 | A — mean macro F1 | 0.944165 | 0.944251 | row-wise − grouped = +0.000085 |
-| B — mean MAE(z) | 0.209144 | 0.080919 | grouped − row-wise = +0.128225 |
+| B — mean MAE(z) | 0.209144 | 0.080906 | grouped − row-wise = +0.128238 |
 
-For Cyber, ordinary stratified row-wise CV can place rows with an identical exact feature vector on opposite sides of a fold. For Storage, ordinary row-wise K-fold can place replicate measurements from the same configuration on opposite sides. In both cases the validation set can then contain observations that are not independent of what the model was allowed to see during fitting; the Storage effect is especially large because KNN can find neighbours from the same configuration.
+For Cyber, ordinary stratified row-wise CV can place rows with an identical exact feature vector on opposite sides of a fold. For Storage, ordinary row-wise K-fold can place replicate measurements from the same configuration on opposite sides. In both cases the validation set can then contain observations that are not independent of what the model was allowed to see during fitting; the Storage effect is especially large because the five replicates of a configuration have identical predictors, so KNN finds training neighbours of the same configuration at distance zero and the score measures replicate noise instead of error on a new configuration. The Cyber effect is negligible and its sign changes across folds, because only 83 of 34,928 rows share an exact feature vector and the row-wise split leaks only 10–15 groups per fold.
 
 Grouping is correct whatever the numerical gap happens to be. The intended score estimates generalisation to a different exact feature group in Cyber and to an unseen storage configuration in Storage. A row-wise score estimates an easier question whenever group-linked observations cross the training/validation boundary.
 

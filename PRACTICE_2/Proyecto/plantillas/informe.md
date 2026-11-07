@@ -1,86 +1,68 @@
-# Protocol memo — Practice 2 *(two pages, English)*
+# Protocol memo — Practice 2
 
-**Team:** _(team identifier)_ · **Date:** _(date)_
-
-This memo is written once, at Practice 2, and is carried **verbatim** into the defence pack.
-It has to be defensible twelve weeks after you write it, so write it for a reader who was not
-in the room.
-
----
+**Team:** Andres, Gonzalo, Fernando, Manuel, Diego  
+**Date:** 2026-10-20
 
 ## 1. The protocol we built
 
 | Field | Challenge A — cyber | Challenge B — storage |
 |---|---|---|
-| Procedure and parameters | | |
-| Grouping key | | |
-| Whether randomness was consumed, and what seed | | |
-| Fold sizes | | |
+| Procedure and parameters | `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=2627)` | `GroupKFold(n_splits=5)` |
+| Grouping key | `feature_group` | `config_group` |
+| Randomness | splitter consumes the frozen project seed 2627 | none consumed by `GroupKFold` |
+| Validation-fold sizes | 6,986; 6,986; 6,985; 6,986; 6,985 | 2,440; 2,440; 2,440; 2,435; 2,435 |
+
+The team-generated partitions were constructed before reading the released sidecars. They were then frozen and retained in the notebooks as evidence of understanding.
 
 ## 2. The invariants we verified
 
-State what you checked, **what the check printed**, and what would have been evidence of
-failure.
-
 | Invariant | How it was checked | Result |
 |---|---|---|
-| No group in both portions of any fold (cyber) | | |
-| No configuration split across folds (storage) | | |
-| Every class present in every validation portion (cyber) | | |
+| No exact feature group in both portions of any Cyber fold | intersected the `feature_group` sets of the training and validation indices in each round | 0 shared groups in all five folds |
+| No Storage configuration split across folds | intersected the `config_group` sets of the training and validation indices in each round | 0 shared groups in all five folds |
+| Every Cyber class present in every canonical validation portion | counted distinct `attack_code` values per released `fold_id` | all 10 classes present in every fold |
+
+A positive overlap count, or fewer than ten Cyber classes in a canonical validation fold, would have been evidence of protocol failure.
 
 ## 3. What the split-protocol comparison measured
 
-The course-fixed pipeline was used, identical under both schemes, with **only the splitting
-protocol varying**.
+The course-fixed estimator and preprocessing were held constant within each challenge. Only the splitting protocol changed.
 
-| Challenge | Grouped | Ungrouped / row-wise | Difference |
-|---|---|---|---|
-| A — macro F1 | | | |
-| B — MAE(z) | | | |
+| Challenge | Grouped | Ungrouped / row-wise | Observed difference |
+|---|---:|---:|---:|
+| A — mean macro F1 | 0.944165 | 0.944251 | row-wise − grouped = +0.000085 |
+| B — mean MAE(z) | 0.209144 | 0.080906 | grouped − row-wise = +0.128238 |
 
-**The mechanism**, in your own words — what the ungrouped protocol lets the model see, and
-what the score therefore stops estimating:
+For Cyber, ordinary stratified row-wise CV can place rows with an identical exact feature vector on opposite sides of a fold. For Storage, ordinary row-wise K-fold can place replicate measurements from the same configuration on opposite sides. In both cases the validation set can then contain observations that are not independent of what the model was allowed to see during fitting; the Storage effect is especially large because the five replicates of a configuration have identical predictors, so KNN finds training neighbours of the same configuration at distance zero and the score measures replicate noise instead of error on a new configuration. The Cyber effect is negligible and its sign changes across folds, because only 83 of 34,928 rows share an exact feature vector and the row-wise split leaks only 10–15 groups per fold.
 
-> _(two or three sentences)_
-
-**Why grouping is right whatever the number was.** The argument must be about **what the
-score is meant to estimate**, not about the size or sign of the gap:
-
-> _(two or three sentences)_
+Grouping is correct whatever the numerical gap happens to be. The intended score estimates generalisation to a different exact feature group in Cyber and to an unseen storage configuration in Storage. A row-wise score estimates an easier question whenever group-linked observations cross the training/validation boundary.
 
 ## 4. The `log10` decision
 
-The full justification, in prose. Not "it scored better" — the argument must be about the
-**scale** of the target, the **currency of the loss**, and the **structure** of the problem.
+Storage latency is strictly positive and spans from about 1.16e5 ns to 2.53e9 ns, more than four orders of magnitude. The raw distribution is strongly right-skewed. On the raw scale, the same proportional prediction error produces a much larger absolute error at the high-latency end, so raw MAE gives the largest latencies much more influence simply because of the unit scale.
 
-> _(one or two paragraphs)_
+We therefore adopt `z = log10(latency_ns)`. This monotone target representation preserves ordering while changing the loss currency: equal differences in `z` correspond to equal multiplicative factors on the physical scale. That makes comparable proportional errors comparable across low- and high-latency configurations. The decision is based on the scale, loss currency and structure of the target, not on which demonstration score happened to be smaller.
 
-**The log-to-physical rule, as we apply it:** log-scale metrics come from `z` and `ẑ`
-directly; a physical metric is obtained by first inverting with `10 ** ẑ`; and
-`10 ** MAE(z)` is a **multiplicative factor**, never a nanosecond error.
+Log-scale metrics are computed directly from `z` and `z_hat`. For a physical metric we first invert each prediction with `latency_ns_hat = 10 ** z_hat` and only then compare it with the raw latency. `10 ** MAE(z)` is not reported as a nanosecond error.
 
 ## 5. The metric contract
 
-| Challenge | Primary metric | Why it fits the engineering problem | Our secondary operational concern |
+| Challenge | Primary metric | Why it fits the engineering problem | Secondary operational concern |
 |---|---|---|---|
-| A | macro F1 | | |
-| B | MAE(z) | | |
+| A — cyber | macro F1 | each of the ten attack classes contributes equally, so a rare class cannot be hidden by the large classes | ransomware recall and false-alarm burden, analysed in P2.5 |
+| B — storage | MAE(z) | reports typical absolute error in the adopted log-scale currency without squaring large residuals | physical MAE in nanoseconds after inverse transformation |
 
-## 6. The declaration that closes the primary comparison basis
+Cyber additionally reports weighted F1, accuracy, per-class precision/recall/F1 with support, and a semantically labelled confusion matrix. Storage additionally reports RMSE(z), R2(z), and one correctly inverted MAE_ns.
 
-| Challenge | Frozen predictive-information basis | Frozen representation | What is method-specific and therefore family-specific |
+## 6. Declaration that closes the primary comparison basis
+
+| Challenge | Frozen predictive-information basis | Frozen representation | Method-specific choices |
 |---|---|---|---|
-| A | | | |
-| B | | | |
+| A — cyber | 11 distributed source predictors | `log1p` on the eight numeric predictors | categorical encoding and method-required scaling |
+| B — storage | 9 distributed source predictors | target `z = log10(latency_ns)` | categorical encoding and method-required scaling |
 
-**What this licenses:** every row of our comparison table on the `primary` route is a
-**pipeline comparison** unless we explicitly hold the representation constant or rerun an
-earlier family, in which case we will say so and claim an isolated family comparison.
+`row_id`, `feature_group`, `config_group`, and `fold_id` are never estimator inputs. No derived predictive feature is introduced in P2. Therefore the primary comparison rows are pipeline comparisons unless a later milestone explicitly holds the predictive representation constant or reruns earlier families on the same representation.
 
 ## 7. What we adopted, and when
 
-- our own fold construction was frozen at: _(cell / timestamp)_
-- the canonical sidecars were read at: _(cell)_
-- the discrepancy between our construction and the canonical assignment was: _(describe, or
-  "none")_
-- from that point, every scored development result uses the canonical assignment.
+Our own fold constructions and invariant reports were frozen in P2.2 before the released sidecars were read. For both challenges the partitions match the canonical partitions exactly. The only discrepancy is numeric labelling: our loops numbered folds 1–5, while the canonical sidecars use 0–4. After normalising that label convention, agreement is 100% row by row. From P2.2(g) onward every scored development result in both notebooks uses the released canonical assignment.
