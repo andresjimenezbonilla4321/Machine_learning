@@ -66,3 +66,74 @@ Cyber additionally reports weighted F1, accuracy, per-class precision/recall/F1 
 ## 7. What we adopted, and when
 
 Our own fold constructions and invariant reports were frozen in P2.2 before the released sidecars were read. For both challenges the partitions match the canonical partitions exactly. The only discrepancy is numeric labelling: our loops numbered folds 1–5, while the canonical sidecars use 0–4. After normalising that label convention, agreement is 100% row by row. From P2.2(g) onward every scored development result in both notebooks uses the released canonical assignment.
+
+# Protocol memo — Practice 3
+
+**Team:** Andres, Gonzalo, Fernando, Manuel, Diego  
+**Date:** 2026-11-08
+
+## 1. The protocol we kept
+
+| Field | Challenge A — cyber | Challenge B — storage |
+|---|---|---|
+| Procedure | canonical `StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=2627)`, read from `cyber_folds.csv` | canonical `GroupKFold(n_splits=5)`, read from `storage_folds.csv` |
+| Grouping key | `feature_group` | `config_group` |
+| Validation-fold sizes | 6,986; 6,986; 6,985; 6,986; 6,985 | 2,440; 2,440; 2,440; 2,435; 2,435 |
+| What changed from P2 | model family (multinomial logistic) and categorical encoding | model family (linear, Ridge, Lasso) and categorical encoding |
+
+No partition was rebuilt in P3. Every learned object (one-hot vocabulary, scaler, model) is fitted on the training portion of each fold and applied unchanged to its validation portion. `PROJECT_RANDOM_STATE = 2627` is printed in the first cell of both notebooks.
+
+## 2. The required interpretation route
+
+| Element | Challenge A — cyber | Challenge B — storage |
+|---|---|---|
+| Reference levels (dropped indicator) | `proto=tcp`, `service=-`, `conn_state=SF` | `load_type=random`, `io_type=write`, `raid=4+1`, `device_type=nvme` |
+| Reason | frequent, operationally readable baselines | frequent baselines; `4+1` is the handout's RAID example |
+| Numeric predictors | `log1p`, then `StandardScaler` inside the fold | `StandardScaler` inside the fold |
+| Penalty and weights | `penalty=None`, `class_weight=None`, `lbfgs`, `max_iter=1000`, `tol=5e-4`, printed from `get_params()` | none for `LinearRegression`; Ridge and Lasso only in P3.4 |
+| Unseen-level policy | `handle_unknown="ignore"`: all zeros, which equals the declared reference | same policy |
+
+## 3. The invariants we verified
+
+| Invariant | How it was checked | Result |
+|---|---|---|
+| Every declared reference level occurs in every training portion | counted reference-level rows in each training portion | present in all five folds, for all three cyber and all four storage predictors |
+| Unseen validation levels | compared training and validation level sets per fold | cyber: `service=gssapi` appears once in fold 3 and is encoded as the reference; storage: none |
+| Probability model invariant to parameterisation | rebuilt probabilities from `w_c = beta_c - beta_r`, `b_c = a_c - a_r` and compared with `predict_proba` | maximum absolute difference 3.9e-16 |
+| No regularisation in force on the cyber fit | printed `penalty`, `C`, `l1_ratio`, `class_weight` | `penalty=None`, `class_weight=None` |
+
+## 4. The parameterisation decision
+
+`coef_` has shape (10, 30): one vector per class and no class held at zero. This is scikit-learn's symmetric parameterisation. The library does not choose or store a reference class. We chose `normal` as the course reference class because it is the natural operational baseline, and obtained the baseline-category coefficients by our own differencing. Three objects are kept apart throughout: the model's probabilities, the stored symmetric coefficients, and the reference-class coefficients. Every odds-ratio sentence names both classes and, for a categorical predictor, the level and its declared reference level. Original categorical and numeric predictors are never ranked against each other by raw coefficient size.
+
+## 5. The metric contract
+
+| Challenge | Primary metric | Reported in P3 |
+|---|---|---|
+| A — cyber | macro F1 | mean 0.827519, fold range 0.007422; weighted F1 0.848197; accuracy 0.850235; per-class precision/recall/F1 with support; labelled confusion matrix |
+| B — storage | MAE(z) | mean 0.198146, fold range 0.011054; RMSE(z) 0.270346; R²(z) 0.896356; one MAE_ns of 16,289,769 ns computed after inverting each prediction with `10 ** z_hat` |
+
+`10 ** MAE(z)` is never reported as a nanosecond error. Ransomware (support 208) is read beside its support: precision 0.933, recall 0.9375, F1 0.935. The weakest cyber class is `mitm` (recall 0.361, support 805).
+
+## 6. What the comparison against Practice 2 measured
+
+Both families are scored on the same five canonical folds, so the comparison is paired. Differences follow the course convention: macro F1 `new − P2`, MAE(z) `P2 − new`, so a positive value means the new family did better.
+
+| Challenge | P3 model vs P2 KNN | Mean paired difference | SD across folds | Folds where P3 is better |
+|---|---|---|---|---|
+| A — macro F1 | multinomial logistic | −0.118038 | 0.002098 | 0 of 5 |
+| B — MAE(z) | LinearRegression | −0.019509 | 0.003677 | 0 of 5 |
+| B — MAE(z) | Ridge (alpha 31.6228) | −0.019383 | 0.003730 | 0 of 5 |
+| B — MAE(z) | Lasso (alpha 0.00316228) | −0.018944 | 0.003861 | 0 of 5 |
+
+The change has the same sign on all five folds in both challenges and is large relative to the fold-to-fold variation. This is a descriptive statement only: fold spread is not a significance test and we make no claim of statistical significance.
+
+The primary comparison rows are **pipeline comparisons**, not isolated estimator-family comparisons. P3 changes the categorical representation (reference-dropped one-hot with fold-fitted scaling) together with the model family, and P2 KNN was not rerun on that representation. The evidence therefore licenses a statement about the two submitted pipelines, not about the estimator family alone.
+
+## 7. The regularisation decision (Challenge B)
+
+The unregularised `LinearRegression` stays in the comparison as the comparator. The design matrix has 12,190 rows and 13 columns, rank 13 and condition number about 8.24, so it is neither wide nor near rank-deficient. On the declared grid `alpha = logspace(-4, 2, 13)` the best mean MAE(z) is 0.198020 for Ridge and 0.197580 for Lasso, against 0.198146 unregularised; the selected Lasso sets 2 of the 13 coefficients exactly to zero. These movements are tiny, and the problem gives no structural reason for sparsity. We therefore keep the unregularised fit as the primary interpretable linear model, with Ridge as the safer alternative if correlated predictors became a concern.
+
+## 8. What we appended, and what we did not change
+
+`comparativa.csv` keeps the four Practice 2 rows unchanged and appends four Practice 3 rows with the `route` column filled (`primary`). `features.md` gains a dated Practice 3 section: only representation changes, no derived predictive feature. The optional regularised Challenge A variant was not run.
