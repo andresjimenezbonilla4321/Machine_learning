@@ -1,7 +1,7 @@
 # `features.md` — typed feature register
 
 **Team:** Andres, Gonzalo, Fernando, Manuel, Diego  
-**Milestone:** P2  
+**Milestone:** cumulative through P3  
 **Date:** 2026-10-20
 
 ## Frozen basis
@@ -39,3 +39,16 @@
 | 2026-10-20 | P2 | storage | `z = log10(latency_ns)` | monotone representation of the positive target | makes the loss currency multiplicative across a target spanning more than four orders of magnitude | representation transformation (target) | primary |
 
 `row_id`, `feature_group`, `config_group`, and `fold_id` are identifiers or evaluation metadata and are not estimator features. No derived predictive feature is introduced in P2.
+
+## Practice 3 representation entries
+
+The predictive-information basis remains frozen from Practice 2. Practice 3 introduces no new predictive source feature; the entries below document the model-required representation used for interpretable linear/logistic coefficients.
+
+| Date | Milestone | Challenge | Feature / transformation | Definition | Motivation | Kind | Route |
+|---|---|---|---|---|---|---|---|
+| 2026-11-09 | P3 | cyber | reference-dropped one-hot for `proto`, `service`, `conn_state` | one indicator per non-reference level; references `tcp`, `-`, `SF`; unseen levels handled with `ignore` | makes categorical coefficients readable as level-versus-reference contrasts | representation transformation | primary |
+| 2026-11-09 | P3 | cyber | StandardScaler after the frozen `log1p` numeric representation | training-fold mean removal and standard-deviation scaling on all eight numeric predictors | puts numeric coefficients on a common one-standard-deviation scale | representation transformation | primary |
+| 2026-11-09 | P3 | storage | reference-dropped one-hot for `load_type`, `io_type`, `raid`, `device_type` | references `random`, `write`, `4+1`, `nvme`; unseen levels handled with `ignore` | makes categorical coefficients readable as level-versus-reference contrasts | representation transformation | primary |
+| 2026-11-09 | P3 | storage | StandardScaler on the five numeric predictors | training-fold mean removal and standard-deviation scaling | puts numeric coefficients on a common one-standard-deviation scale | representation transformation | primary |
+
+No derived predictive information is added in Practice 3. `row_id`, grouping metadata and `fold_id` remain excluded from estimator inputs.
